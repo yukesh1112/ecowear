@@ -1,6 +1,6 @@
 # EcoWear – Sustainable Fashion Recommendation Tool
 
-![EcoWear Logo](https://raw.githubusercontent.com/yukesh1112/ecowear/refs/heads/main/UI-Image.png)
+![EcoWear Logo](https://github.com/yukesh1112/ecowear/blob/54339412389e3dfd5a3761b1623fec518efe9191/UI-Image.png)
 
 ## 📌 Overview
 EcoWear is an AI-powered recommendation tool that helps users find **ethical and sustainable alternatives** to clothing items they’re interested in purchasing online.
