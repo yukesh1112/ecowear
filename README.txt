@@ -40,7 +40,7 @@ We wanted to create a tool that:
 
 ## ⚙️ Installation & Setup
 1. **Clone the repository**  
-   git clone https://github.com/yourusername/ecowear.git
+   git clone https://github.com/yukesh1112/ecowear.git
    cd ecowear
 
 2. **Install dependencies**  
