@@ -1,55 +1,57 @@
-import numpy as np
-import os
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from torchvision.transforms import transforms
+from torchvision import transforms
 from PIL import Image
-import torch.backends.cudnn as cudnn
-import torchvision.models
+from clothingClassifier import create_model # Import the new model creator
 
-alexnet = torchvision.models.alexnet(pretrained=True)
+# --- CONFIGURATION (This section runs only once when the app starts) ---
 
-class TransferNet(nn.Module):
-    def __init__(self):
-        super(TransferNet, self).__init__()
-        self.conv1 = nn.Conv2d(256, 64, 3)
-        self.pool = nn.MaxPool2d(2, 2)  # f = 2, stride = 2
-        self.fc1 = nn.Linear(4 * 6 * 64, 80)
-        self.fc2 = nn.Linear(80, 4)
+# 1. CREATE THE MODEL STRUCTURE
+# Create an instance of our new 10-class model.
+model = create_model(num_classes=10)
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = x.view(-1, 4 * 6 * 64)  # flatten feature data
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
 
-def classify_image(imgpath):
-    classes = ['bottoms', 'dresses', 'shoes', 'tops']
-    modelpath = 'model2.pth'
-    #model = TransferNet()
+# 2. LOAD THE TRAINED WEIGHTS
+# Load the dictionary of weights (the state_dict) into the model structure.
+MODEL_PATH = 'clothing_model_v1.pth' # The new 10-class model you trained
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
 
-    origimage = Image.open(imgpath)
-    image = origimage.resize((400, 533))
+# Set the model to evaluation mode (very important for accurate predictions).
+model.eval()
 
-    transform = transforms.ToTensor()
-    image = transform(image)
-    image = image.type(torch.FloatTensor)
-    im = image[None, :, :]
-    feature = alexnet.features(im)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = torch.load(modelpath, map_location=torch.device('cpu'))
-    model = model.to(device)
-    if device == 'cuda':
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
+# 3. DEFINE IMAGE TRANSFORMATIONS
+# These must be the same as the validation transformations from your training script.
+transform = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
 
-    model.eval()
-    output = model(feature)
 
-    pred = output.max(1, keepdim=True)[1]
-    return pred
+# --- CLASSIFICATION FUNCTION (This is called for each prediction) ---
 
+def classify_image(image_path):
+    """
+    Takes an image path, processes it using the globally loaded model,
+    and returns the predicted class index.
+    """
+    try:
+        # Open the image file and ensure it's in RGB format.
+        image = Image.open(image_path).convert('RGB')
+
+        # Apply the transformations and add a batch dimension for the model.
+        image_tensor = transform(image).unsqueeze(0)
+
+        # Make a prediction with the model.
+        with torch.no_grad(): # Disables gradient calculation for speed.
+            outputs = model(image_tensor)
+            # Get the index of the class with the highest score.
+            _, predicted_index = torch.max(outputs, 1)
+
+        # Return the predicted index as a simple number (e.g., 0, 1, 2...).
+        return predicted_index.item()
+
+    except Exception as e:
+        print(f"Error classifying image: {e}")
+        return None

@@ -6,7 +6,7 @@ import numpy as np
 import time
 from selenium import webdriver as webdriver
 
-DRIVER_PATH = '/Users/katarinac/Desktop/scraping/chromedriver'
+DRIVER_PATH = 'D:\EcoWear\chromedriver-win64'
 
 # code to scroll to bottom on a site
 def scroll(driver, timeout):
